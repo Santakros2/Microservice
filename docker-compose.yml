@@ -1,0 +1,43 @@
+version: "3.9"
+
+services:
+
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql/init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  auth:
+    build: ./auth-service
+    depends_on:
+      - mysql
+    ports:
+      - "8001:8001"
+
+  profile:
+    build: ./profile-service
+    depends_on:
+      - mysql
+    ports:
+      - "8002:8002"
+
+  gateway:
+    build: ./gateway
+    depends_on:
+      - auth
+      - profile
+    ports:
+      - "8000:8000"
+
+volumes:
+  mysql_data:
